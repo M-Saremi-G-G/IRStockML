@@ -1,4 +1,4 @@
-# Importing libraries
+# Importing
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,10 +7,10 @@ from sklearn.ensemble import RandomForestRegressor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, LSTM
 
-# Loading data
+# Loading
 df = pd.read_csv('stock_prices.csv')
 
-# Data preparation and feature engineering
+# Preparation
 scaler = MinMaxScaler(feature_range=(0, 1))
 scaled_data = scaler.fit_transform(df['Close'].values.reshape(-1, 1))
 
@@ -25,7 +25,7 @@ for x in range(prediction_days, len(scaled_data)):
 x_train, y_train = np.array(x_train), np.array(y_train)
 x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
 
-# Building and training LSTM model
+# Training LSTM 
 model_lstm = Sequential()
 model_lstm.add(LSTM(units=50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
 model_lstm.add(LSTM(units=50, return_sequences=True))
@@ -35,11 +35,11 @@ model_lstm.add(Dense(units=1))
 model_lstm.compile(optimizer='adam', loss='mean_squared_error')
 model_lstm.fit(x_train, y_train, epochs=25, batch_size=32)
 
-# Building and training Random Forest model
+# Training RF
 model_rf = RandomForestRegressor(n_estimators=1000, random_state=42)
 model_rf.fit(x_train, y_train)
 
-# Combining LSTM and Random Forest models
+# Combining LSTM & RF
 inputs = df['Close'][len(df) - len(x_train) - prediction_days:].values
 inputs = inputs.reshape(-1, 1)
 inputs = scaler.transform(inputs)
@@ -59,7 +59,7 @@ predictions_rf = scaler.inverse_transform(predictions_rf.reshape(-1, 1))
 
 predictions_combined = (predictions_lstm + predictions_rf) / 2
 
-# Predicting stock prices for the next 30 days
+# Predicting stock prices
 last_day = df['Date'].iloc[-1]
 next_30_days = pd.date_range(last_day, periods=31, freq='B')
 next_30_days = pd.DataFrame(next_30_days, columns=['Date'])
@@ -84,7 +84,7 @@ for i in range(30):
     inputs = np.append(inputs, prediction_combined)
     next_30_days['Close'][i] = prediction_combined[0][0]
 
-# Evaluating models
+# Evaluating
 rmse_lstm = np.sqrt(np.mean(((predictions_lstm - y_test) ** 2)))
 rmse_rf = np.sqrt(np.mean(((predictions_rf - y_test) ** 2)))
 rmse_combined = np.sqrt(np.mean(((predictions_combined - y_test) ** 2)))
@@ -93,7 +93,7 @@ print('LSTM RMSE:', rmse_lstm)
 print('Random Forest RMSE:', rmse_rf)
 print('Combined RMSE:', rmse_combined)
 
-# Plotting results
+# Plotting
 plt.plot(df['Date'], df['Close'])
 plt.plot(next_30_days['Date'], next_30_days['Close'])
 plt.show()
